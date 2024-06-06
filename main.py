@@ -1,23 +1,40 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query, Path, Body
+from pydantic import BaseModel
+from typing import Annotated
 
 app = FastAPI()
 
-fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
+
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+
+class User(BaseModel):
+    username: str
+    full_name: str | None = None
+
 
 @app.get("/items/")
-async def read_item(skip: int = 1, limit: int = 10):
-    return fake_items_db[skip: skip + limit] # Slicing
+async def read_items(q: Annotated[list, Query()] = ["foo", "bar"]):
+    query_items = {"q": q}
+    return query_items
 
 
-# Optional parameter with Union
 @app.get("/items/{item_id}")
-async def read_item(item_id: str, q: str | None = None):
+async def read_items(
+    item_id: Annotated[int, Path(title="The ID of the item to get")],
+    q: Annotated[str | None, Query(alias="item-query")] = None,
+):
+    results = {"item_id": item_id}
     if q:
-        return {"item_id": item_id, "q": q}
-    return {"item_id": item_id}
+        results.update({"q": q})
+    return results
 
 
-@app.get("/items2/{item_id}")
-async def read_user_item(item_id: str, needy: str):
-    item = {"item_id": item_id, "needy": needy}
-    return item
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item, user: User, importance: Annotated[int, Body()]):
+    # Here, Body() tells that this parameter is Body param
+    results = {"item_id": item_id, "item": item, "user": user, "importance":importance}
+    return results
