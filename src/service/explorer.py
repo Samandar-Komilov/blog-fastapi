@@ -1,4 +1,4 @@
-from models.explorer import Explorer
+from model.explorer import Explorer
 import fake.explorer as data
 
 def get_all() -> list[Explorer]:
